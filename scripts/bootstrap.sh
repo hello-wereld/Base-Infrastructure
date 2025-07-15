@@ -60,25 +60,39 @@ if ! aws sts get-caller-identity &> /dev/null; then
     exit 1
 fi
 
-# Generate random suffix for bucket name
-RANDOM_SUFFIX=$(openssl rand -hex 4)
-BUCKET_NAME="terraform-state-${PROJECT_NAME}-${ENVIRONMENT}-${RANDOM_SUFFIX}"
+# Check if bucket already exists for this project/environment
+BUCKET_PREFIX="terraform-state-${PROJECT_NAME}-${ENVIRONMENT}-"
 TABLE_NAME="terraform-state-lock-${PROJECT_NAME}"
 
-echo -e "${YELLOW}Creating S3 bucket: $BUCKET_NAME${NC}"
+echo -e "${YELLOW}Checking for existing S3 bucket with prefix: $BUCKET_PREFIX${NC}"
 
-# Create S3 bucket (handle us-east-1 special case)
-if [ "$AWS_REGION" = "us-east-1" ]; then
-    aws s3api create-bucket \
-        --bucket "$BUCKET_NAME" \
-        --region "$AWS_REGION" \
-        --no-cli-pager
+# Look for existing bucket
+EXISTING_BUCKET=$(aws s3api list-buckets --query "Buckets[?starts_with(Name, \`$BUCKET_PREFIX\`)].Name" --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+
+if [ -n "$EXISTING_BUCKET" ]; then
+    BUCKET_NAME="$EXISTING_BUCKET"
+    echo -e "${YELLOW}Found existing S3 bucket: $BUCKET_NAME${NC}"
 else
-    aws s3api create-bucket \
-        --bucket "$BUCKET_NAME" \
-        --region "$AWS_REGION" \
-        --create-bucket-configuration LocationConstraint="$AWS_REGION" \
-        --no-cli-pager
+    # Generate random suffix for new bucket name
+    RANDOM_SUFFIX=$(openssl rand -hex 4)
+    BUCKET_NAME="terraform-state-${PROJECT_NAME}-${ENVIRONMENT}-${RANDOM_SUFFIX}"
+    
+    echo -e "${YELLOW}Creating new S3 bucket: $BUCKET_NAME${NC}"
+    
+    # Create S3 bucket (handle us-east-1 special case)
+    if [ "$AWS_REGION" = "us-east-1" ]; then
+        aws s3api create-bucket \
+            --bucket "$BUCKET_NAME" \
+            --region "$AWS_REGION" \
+            --no-cli-pager
+    else
+        aws s3api create-bucket \
+            --bucket "$BUCKET_NAME" \
+            --region "$AWS_REGION" \
+            --create-bucket-configuration LocationConstraint="$AWS_REGION" \
+            --no-cli-pager
+    fi
+    echo -e "${GREEN}S3 bucket created successfully${NC}"
 fi
 
 # Enable versioning
@@ -112,20 +126,25 @@ echo -e "${GREEN}S3 bucket created successfully${NC}"
 
 echo -e "${YELLOW}Creating DynamoDB table: $TABLE_NAME${NC}"
 
-# Create DynamoDB table
-aws dynamodb create-table \
-    --table-name "$TABLE_NAME" \
-    --attribute-definitions AttributeName=LockID,AttributeType=S \
-    --key-schema AttributeName=LockID,KeyType=HASH \
-    --billing-mode PAY_PER_REQUEST \
-    --region "$AWS_REGION" \
-    --no-cli-pager
+# Check if DynamoDB table already exists
+if aws dynamodb describe-table --table-name "$TABLE_NAME" --region "$AWS_REGION" &> /dev/null; then
+    echo -e "${YELLOW}DynamoDB table $TABLE_NAME already exists, skipping creation${NC}"
+else
+    # Create DynamoDB table
+    aws dynamodb create-table \
+        --table-name "$TABLE_NAME" \
+        --attribute-definitions AttributeName=LockID,AttributeType=S \
+        --key-schema AttributeName=LockID,KeyType=HASH \
+        --billing-mode PAY_PER_REQUEST \
+        --region "$AWS_REGION" \
+        --no-cli-pager
 
-# Wait for table to be active
-echo "Waiting for DynamoDB table to be active..."
-aws dynamodb wait table-exists --table-name "$TABLE_NAME" --region "$AWS_REGION"
-
-echo -e "${GREEN}DynamoDB table created successfully${NC}"
+    # Wait for table to be active
+    echo "Waiting for DynamoDB table to be active..."
+    aws dynamodb wait table-exists --table-name "$TABLE_NAME" --region "$AWS_REGION"
+    
+    echo -e "${GREEN}DynamoDB table created successfully${NC}"
+fi
 
 # Create backend configuration file
 cat > backend-config.hcl << EOF

@@ -71,26 +71,10 @@ jobs:
 
     - name: Bootstrap Terraform Backend (if needed)
       run: |
-        # Check if backend resources exist
-        BUCKET_NAME="terraform-state-${{ secrets.PROJECT_NAME }}-${ENVIRONMENT}-$(echo $RANDOM | md5sum | head -c 8)"
-        TABLE_NAME="terraform-state-lock-${{ secrets.PROJECT_NAME }}"
-        
-        # Check if bucket exists
-        if ! aws s3api head-bucket --bucket "terraform-state-${{ secrets.PROJECT_NAME }}-${ENVIRONMENT}" 2>/dev/null; then
-          echo "Creating Terraform backend resources..."
-          chmod +x scripts/bootstrap.sh
-          ./scripts/bootstrap.sh --project "${{ secrets.PROJECT_NAME }}" --environment "${ENVIRONMENT}" --region "${{ secrets.AWS_REGION }}"
-        else
-          echo "Backend resources already exist"
-          # Create backend config for existing resources
-          cat > backend-config.hcl << EOF
-        bucket         = "terraform-state-${{ secrets.PROJECT_NAME }}-${ENVIRONMENT}"
-        key            = "terraform.tfstate"
-        region         = "${{ secrets.AWS_REGION }}"
-        dynamodb_table = "terraform-state-lock-${{ secrets.PROJECT_NAME }}"
-        encrypt        = true
-        EOF
-        fi
+        # Always run bootstrap script - it will handle existing resources gracefully
+        echo "Running Terraform backend bootstrap..."
+        chmod +x scripts/bootstrap.sh
+        ./scripts/bootstrap.sh --project "${{ secrets.PROJECT_NAME }}" --environment "${ENVIRONMENT}" --region "${{ secrets.AWS_REGION }}"
 
     - name: Terraform Format Check
       run: terraform fmt -check -recursive
