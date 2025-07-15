@@ -67,12 +67,19 @@ TABLE_NAME="terraform-state-lock-${PROJECT_NAME}"
 
 echo -e "${YELLOW}Creating S3 bucket: $BUCKET_NAME${NC}"
 
-# Create S3 bucket
-aws s3api create-bucket \
-    --bucket "$BUCKET_NAME" \
-    --region "$AWS_REGION" \
-    --create-bucket-configuration LocationConstraint="$AWS_REGION" \
-    --no-cli-pager
+# Create S3 bucket (handle us-east-1 special case)
+if [ "$AWS_REGION" = "us-east-1" ]; then
+    aws s3api create-bucket \
+        --bucket "$BUCKET_NAME" \
+        --region "$AWS_REGION" \
+        --no-cli-pager
+else
+    aws s3api create-bucket \
+        --bucket "$BUCKET_NAME" \
+        --region "$AWS_REGION" \
+        --create-bucket-configuration LocationConstraint="$AWS_REGION" \
+        --no-cli-pager
+fi
 
 # Enable versioning
 aws s3api put-bucket-versioning \
