@@ -1,0 +1,20 @@
+aws_region   = "us-west-2"
+project_name = "my-app"
+environment  = "dev"
+
+# VPC Configuration
+vpc_cidr               = "10.0.0.0/16"
+availability_zones     = ["us-west-2a", "us-west-2b"]
+public_subnet_cidrs    = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs   = ["10.0.10.0/24", "10.0.20.0/24"]
+
+# Route53 Configuration (optional)
+# domain_name = "example.com"
+# subdomain   = "api"# API Ga
+teway Configuration (optional)
+# api_domain_name = "api.example.com"
+
+# CloudFront Configuration (optional)
+# cloudfront_domain_name = "cdn.example.com"
+# cloudfront_aliases     = ["www.example.com", "example.com"]
+cloudfront_price_class = "PriceClass_100"
