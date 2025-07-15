@@ -66,8 +66,8 @@ TABLE_NAME="terraform-state-lock-${PROJECT_NAME}"
 
 echo -e "${YELLOW}Checking for existing S3 bucket with prefix: $BUCKET_PREFIX${NC}"
 
-# Look for existing bucket
-EXISTING_BUCKET=$(aws s3api list-buckets --query "Buckets[?starts_with(Name, \`$BUCKET_PREFIX\`)].Name" --output text --region "$AWS_REGION" 2>/dev/null || echo "")
+# Look for existing bucket (get first match only)
+EXISTING_BUCKET=$(aws s3api list-buckets --query "Buckets[?starts_with(Name, \`$BUCKET_PREFIX\`)].Name | [0]" --output text --region "$AWS_REGION" 2>/dev/null || echo "")
 
 if [ -n "$EXISTING_BUCKET" ]; then
     BUCKET_NAME="$EXISTING_BUCKET"
