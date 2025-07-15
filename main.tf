@@ -41,23 +41,3 @@ resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
   retention_in_days = 7
 }
-
-# Lambda Function
-resource "aws_lambda_function" "app_function" {
-  filename         = "lambda.zip"
-  function_name    = "${var.project_name}-function"
-  role            = aws_iam_role.lambda_role.arn
-  handler         = "index.handler"
-  runtime         = "nodejs18.x"
-
-  depends_on = [
-    aws_iam_role_policy_attachment.lambda_logs,
-    aws_cloudwatch_log_group.lambda,
-  ]
-}
-
-# CloudWatch Log Group for Lambda
-resource "aws_cloudwatch_log_group" "lambda" {
-  name              = "/aws/lambda/${var.project_name}-function"
-  retention_in_days = 14
-}
