@@ -52,8 +52,9 @@ variable "subdomain" {
   description = "Subdomain for the application (optional)"
   type        = string
   default     = ""
-}# 
-API Gateway Configuration
+}
+
+# API Gateway Configuration
 variable "api_domain_name" {
   description = "Custom domain name for API Gateway (optional)"
   type        = string
