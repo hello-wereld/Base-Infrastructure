@@ -39,6 +39,16 @@ jobs:
 
     - name: Bootstrap Terraform Backend
       run: |
+        echo "Starting bootstrap process..."
+        echo "Project: ${{ secrets.PROJECT_NAME }}"
+        echo "Environment: ${{ github.event.inputs.environment }}"
+        echo "Region: ${{ secrets.AWS_REGION }}"
+        
+        # Test AWS connectivity
+        echo "Testing AWS connectivity..."
+        aws sts get-caller-identity
+        
+        # Run bootstrap
         chmod +x scripts/bootstrap.sh
         ./scripts/bootstrap.sh \
           --project "${{ secrets.PROJECT_NAME }}" \
