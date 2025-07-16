@@ -12,7 +12,7 @@ on:
 jobs:
   validate:
     name: 'Validate Terraform'
-    runs-on: uself-hosted
+    runs-on: ip-172-31-23-96
     
     steps:
     - name: Checkout

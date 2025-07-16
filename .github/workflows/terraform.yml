@@ -34,7 +34,7 @@ env:
 jobs:
   terraform:
     name: 'Terraform'
-    runs-on: self-hosted
+    runs-on: ip-172-31-23-96
     environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
     
     defaults:
