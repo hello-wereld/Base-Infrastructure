@@ -23,7 +23,7 @@ env:
 jobs:
   bootstrap:
     name: 'Bootstrap Backend'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     environment: ${{ github.event.inputs.environment }}
     
     steps:
