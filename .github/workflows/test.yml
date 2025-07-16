@@ -6,7 +6,7 @@ on:
 jobs:
   test:
     name: 'Test Job'
-    runs-on: ip-172-31-23-96
+    runs-on: self-hosted
     
     steps:
     - name: Checkout
